@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum TipoUsuario {
+  ALUNO
+  PROFESSOR
+  FORMADO
+  RECRUTADOR
+}
+
+enum TipoProjeto {
+  MULTIMIDIA
+  TEXTO
+  VIDEO
+  FOTOS
+}
+
+enum TipoArquivo {
+  FOTO
+  PDF
+  VIDEO
+}
+
+model Usuario {
+  id               Int          @id @default(autoincrement())
+  nome             String
+  email            String       @unique
+  senha            String
+  telefone         String?
+  cpf              String?      @unique
+  idade            Int?
+  linkedin         String?
+  curriculoLattes  String?
+  fotoUrl          String?
+  biografia        String?
+  tipoUsuario      TipoUsuario
+  projetos         Projeto[]    @relation("UsuarioProjetos")
+  criadoEm         DateTime     @default(now())
+}
+
+model Projeto {
+  id              Int           @id @default(autoincrement())
+  titulo          String
+  descricao       String?
+  dataCriacao     DateTime      @default(now())
+  tipo            TipoProjeto
+  usuario         Usuario       @relation("UsuarioProjetos", fields: [usuarioId], references: [id])
+  usuarioId       Int
+  arquivos        Arquivo[]
+}
+
+model Arquivo {
+  id          Int          @id @default(autoincrement())
+  url         String
+  tipo        TipoArquivo
+  projeto     Projeto      @relation(fields: [projetoId], references: [id])
+  projetoId   Int
+}
