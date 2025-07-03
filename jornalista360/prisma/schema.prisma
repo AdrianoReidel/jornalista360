@@ -7,6 +7,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id             Int       @id @unique @default(autoincrement())
+  name           String?   
+  email          String    @unique
+  emailVerified  DateTime? 
+  image          String?   
+
+  accounts       Account[]
+  sessions       Session[]
+
+  profile        UserProfile? @relation(fields: [profileId], references: [id])
+  profileId      Int?         @unique
+
+  createdAt      DateTime   @default(now())
+}
+
+model UserProfile {
+  id              Int       @id @unique @default(autoincrement())
+  fullName        String?
+  telefone        String?
+  cpf             String?   @unique
+  idade           Int?
+  linkedin        String?
+  curriculoLattes String?
+  fotoUrl         String?
+  biografia       String?
+  tipoUsuario     TipoUsuario?
+  criadoViaGoogle Boolean   @default(false)
+
+  user            User?     @relation
+
+  projetos        Projeto[] @relation("UsuarioProjetos")
+}
+
+model Projeto {
+  id              Int           @id @default(autoincrement())
+  titulo          String
+  descricao       String?
+  dataCriacao     DateTime      @default(now())
+  tipo            TipoProjeto
+
+  usuario         UserProfile   @relation("UsuarioProjetos", fields: [usuarioId], references: [id])
+  usuarioId       Int
+
+  arquivos        Arquivo[]
+}
+
+model Arquivo {
+  id          Int          @id @default(autoincrement())
+  url         String
+  tipo        TipoArquivo
+
+  projeto     Projeto      @relation(fields: [projetoId], references: [id])
+  projetoId   Int
+}
+
 enum TipoUsuario {
   ALUNO
   PROFESSOR
@@ -27,38 +83,38 @@ enum TipoArquivo {
   VIDEO
 }
 
-model Usuario {
-  id               Int          @id @default(autoincrement())
-  nome             String
-  email            String       @unique
-  senha            String
-  telefone         String?
-  cpf              String?      @unique
-  idade            Int?
-  linkedin         String?
-  curriculoLattes  String?
-  fotoUrl          String?
-  biografia        String?
-  tipoUsuario      TipoUsuario
-  projetos         Projeto[]    @relation("UsuarioProjetos")
-  criadoEm         DateTime     @default(now())
+model Account {
+  id                 String   @id @default(cuid())
+  userId             Int
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
 }
 
-model Projeto {
-  id              Int           @id @default(autoincrement())
-  titulo          String
-  descricao       String?
-  dataCriacao     DateTime      @default(now())
-  tipo            TipoProjeto
-  usuario         Usuario       @relation("UsuarioProjetos", fields: [usuarioId], references: [id])
-  usuarioId       Int
-  arquivos        Arquivo[]
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Arquivo {
-  id          Int          @id @default(autoincrement())
-  url         String
-  tipo        TipoArquivo
-  projeto     Projeto      @relation(fields: [projetoId], references: [id])
-  projetoId   Int
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
