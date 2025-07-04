@@ -19,14 +19,7 @@ export default function Home() {
   const [usuarioDados, setUsuarioDados] = useState({
     nome: "",
     senha: "",
-    telefone: "",
-    cpf: "",
-    idade: "",
-    linkedin: "",
-    curriculoLattes: "",
-    fotoFile: null as File | null,
-    biografia: "",
-    tipoUsuario: "ALUNO",
+    email: "",
   });
 
   useEffect(() => {

@@ -15,7 +15,12 @@ export default function MeuPerfilPageContent() {
           <h2 className="text-xl font-semibold mb-4 text-center">Meu Perfil</h2>
 
           <div className="flex-grow overflow-auto">
-            {/* Conteúdo do meu perfil aqui */}
+            <iframe
+              src="https://res.cloudinary.com/dr0vswdzn/raw/upload/v1751598614/jornalista360/lphkidbav6rzqr2ozuxv.pdf"
+              width="100%"
+              height="600px"
+            />
+
           </div>
 
           <div className="absolute bottom-6 right-6 flex gap-4">

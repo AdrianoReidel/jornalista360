@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
-import type { NextAuthOptions, Session } from "next-auth";
+import type { NextAuthOptions, Session, User } from "next-auth";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -17,8 +17,43 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async session({ session }: { session: Session }) {
+    async session({ session }: { session: Session; user: User }) {
       return session;
+    },
+
+    async signIn({ user }) {
+      const usuario = await prisma.user.findUnique({
+        where: { email: user.email! },
+        include: { profile: true },
+      });
+
+      if (!usuario) return false;
+
+      // Cria o perfil se ainda não existir
+      if (!usuario.profile) {
+        const novoPerfil = await prisma.userProfile.create({
+          data: {
+            fullName: user.name ?? null,
+            fotoUrl: user.image ?? null,
+            criadoViaGoogle: true,
+            user: {
+              connect: { id: usuario.id },
+            },
+          },
+        });
+
+        // Atualiza o user para apontar para o novo perfil
+        await prisma.user.update({
+          where: { id: usuario.id },
+          data: {
+            profile: {
+              connect: { id: novoPerfil.id },
+            },
+          },
+        });
+      }
+
+      return true;
     },
   },
 };
