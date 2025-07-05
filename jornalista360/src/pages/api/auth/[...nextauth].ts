@@ -22,15 +22,14 @@ export const authOptions: NextAuthOptions = {
     },
 
     async signIn({ user }) {
+      // Aguarda o PrismaAdapter criar o usuário automaticamente, se for o primeiro login
       const usuario = await prisma.user.findUnique({
         where: { email: user.email! },
         include: { profile: true },
       });
 
-      if (!usuario) return true;
-
-      // Cria o perfil se ainda não existir
-      if (!usuario.profile) {
+      // Se o usuário foi criado agora ou já existia, checa se o perfil está ausente
+      if (usuario && !usuario.profile) {
         const novoPerfil = await prisma.userProfile.create({
           data: {
             fullName: user.name ?? null,
@@ -42,7 +41,7 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        // Atualiza o user para apontar para o novo perfil
+        // Conecta o novo perfil ao usuário
         await prisma.user.update({
           where: { id: usuario.id },
           data: {
@@ -54,7 +53,7 @@ export const authOptions: NextAuthOptions = {
       }
 
       return true;
-    },
+    }
   },
 };
 
