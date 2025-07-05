@@ -8,59 +8,92 @@ datasource db {
 }
 
 model User {
-  id             Int       @id @unique @default(autoincrement())
-  name           String?   
-  email          String    @unique
-  emailVerified  DateTime? 
-  image          String?   
-
-  accounts       Account[]
-  sessions       Session[]
-
-  profile        UserProfile? @relation(fields: [profileId], references: [id])
-  profileId      Int?         @unique
-
-  createdAt      DateTime   @default(now())
+  id            Int          @id @unique @default(autoincrement())
+  name          String?
+  email         String       @unique
+  emailVerified DateTime?
+  image         String?
+  profileId     Int?         @unique
+  createdAt     DateTime     @default(now())
+  accounts      Account[]
+  sessions      Session[]
+  profile       UserProfile? @relation(fields: [profileId], references: [id])
 }
 
 model UserProfile {
-  id              Int       @id @unique @default(autoincrement())
+  id              Int          @id @unique @default(autoincrement())
   fullName        String?
   telefone        String?
-  cpf             String?   @unique
+  cpf             String?      @unique
   idade           Int?
   linkedin        String?
   curriculoLattes String?
   fotoUrl         String?
   biografia       String?
   tipoUsuario     TipoUsuario?
-  criadoViaGoogle Boolean   @default(false)
-
-  user            User?     @relation
-
-  projetos        Projeto[] @relation("UsuarioProjetos")
+  criadoViaGoogle Boolean      @default(false)
+  projetos        Projeto[]    @relation("UsuarioProjetos")
+  user            User?
 }
 
 model Projeto {
-  id              Int           @id @default(autoincrement())
-  titulo          String
-  descricao       String?
-  dataCriacao     DateTime      @default(now())
-  tipo            TipoProjeto
+  id          Int         @id @default(autoincrement())
+  titulo      String
+  descricao   String?
+  dataCriacao DateTime    @default(now())
+  tipo        TipoProjeto
+  usuarioId   Int
+  arquivos    Arquivo[]
+  usuario     UserProfile @relation("UsuarioProjetos", fields: [usuarioId], references: [id])
 
-  usuario         UserProfile   @relation("UsuarioProjetos", fields: [usuarioId], references: [id])
-  usuarioId       Int
-
-  arquivos        Arquivo[]
+  @@index([usuarioId], map: "Projeto_usuarioId_fkey")
 }
 
 model Arquivo {
-  id          Int          @id @default(autoincrement())
-  url         String
-  tipo        TipoArquivo
+  id        Int         @id @default(autoincrement())
+  url       String
+  tipo      TipoArquivo
+  projetoId Int
+  projeto   Projeto     @relation(fields: [projetoId], references: [id])
 
-  projeto     Projeto      @relation(fields: [projetoId], references: [id])
-  projetoId   Int
+  @@index([projetoId], map: "Arquivo_projetoId_fkey")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId], map: "Account_userId_fkey")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "Session_userId_fkey")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 enum TipoUsuario {
@@ -81,40 +114,4 @@ enum TipoArquivo {
   FOTO
   PDF
   VIDEO
-}
-
-model Account {
-  id                 String   @id @default(cuid())
-  userId             Int
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       Int
-  expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
 }
