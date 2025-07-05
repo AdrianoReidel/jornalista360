@@ -27,7 +27,7 @@ export const authOptions: NextAuthOptions = {
         include: { profile: true },
       });
 
-      if (!usuario) return false;
+      if (!usuario) return true;
 
       // Cria o perfil se ainda não existir
       if (!usuario.profile) {
