@@ -30,7 +30,36 @@ export default async function handler(
       include: { profile: true },
     });
 
-    if (!user || !user.profile) {
+    // Se o usuário foi criado agora ou já existia, checa se o perfil está ausente
+      if (user && !user.profile) {
+        const novoPerfil = await prisma.userProfile.create({
+          data: {
+            fullName: user.name ?? null,
+            fotoUrl: user.image ?? null,
+            criadoViaGoogle: true,
+            user: {
+              connect: { id: user.id },
+            },
+          },
+        });
+
+        // Conecta o novo perfil ao usuário
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            profile: {
+              connect: { id: novoPerfil.id },
+            },
+          },
+        });
+      }
+
+    const userAtt = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { profile: true },
+    });
+
+    if (!userAtt || !userAtt.profile) {
       return res
         .status(404)
         .json({ error: "Usuário ou perfil não encontrado" });
@@ -43,7 +72,7 @@ export default async function handler(
         descricao,
         tipo,
         usuario: {
-          connect: { id: user.profile.id },
+          connect: { id: userAtt.profile.id },
         },
         arquivos: {
           create: [
