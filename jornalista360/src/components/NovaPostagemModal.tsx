@@ -93,39 +93,44 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
 
     await toast.promise(
       (async () => {
-         if (temImagem) {
-        const uploadPromises = imagens.map(uploadFileToCloudinary);
-        urlsImagens = await Promise.all(uploadPromises);
-      }
+        try {
+          if (temImagem) {
+            const uploadPromises = imagens.map(uploadFileToCloudinary);
+            urlsImagens = await Promise.all(uploadPromises);
+          }
 
-      if (temPdf) {
-        const uploadPromises = pdfs.map(uploadFileToCloudinary);
-        urlsPdfs = await Promise.all(uploadPromises);
-      }
+          if (temPdf) {
+            const uploadPromises = pdfs.map(uploadFileToCloudinary);
+            urlsPdfs = await Promise.all(uploadPromises);
+          }
 
-        let tipo = "MULTIMIDIA";
-        const tipos = [temImagem, temPdf, temYoutube].filter(Boolean).length;
-        if (tipos === 1) {
-          if (temImagem) tipo = "FOTOS";
-          else if (temPdf) tipo = "TEXTO";
-          else if (temYoutube) tipo = "VIDEO";
+          let tipo = "MULTIMIDIA";
+          const tipos = [temImagem, temPdf, temYoutube].filter(Boolean).length;
+          if (tipos === 1) {
+            if (temImagem) tipo = "FOTOS";
+            else if (temPdf) tipo = "TEXTO";
+            else if (temYoutube) tipo = "VIDEO";
+          }
+
+          await api.post("/projetos", {
+            titulo,
+            descricao,
+            imagens: urlsImagens,
+            pdfs: urlsPdfs,
+            youtubeLinks,
+            tipo,
+          });
+        } finally {
+          onClose();
         }
-
-        await api.post("/projetos", {
-          titulo,
-          descricao,
-          imagens: urlsImagens,
-          pdfs: urlsPdfs,
-          youtubeLinks,
-          tipo,
-        });
       })(),
-    {
-      loading: "Enviando postagem...",
-      success: "Postagem enviada com sucesso!",
-      error: "Erro ao enviar postagem. Tente novamente.",
-    }
-  );}
+      {
+        loading: "Enviando postagem...",
+        success: "Postagem enviada com sucesso!",
+        error: "Erro ao enviar postagem. Tente novamente.",
+      }
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
