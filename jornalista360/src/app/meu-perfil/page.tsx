@@ -35,7 +35,7 @@ export default function MeuPerfilPage() {
       <>
         <div
           className="fixed inset-0 bg-cover bg-center z-0"
-          style={{ backgroundImage: "url('/background-jornal-pages-pages.jpg')" }}
+          style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
         ></div>
         <MeuPerfilPageContent/>
       </>

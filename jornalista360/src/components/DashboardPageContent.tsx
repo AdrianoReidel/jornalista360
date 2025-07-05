@@ -23,12 +23,13 @@ export default function DashboardPageContent() {
   const [modalNovaPostagemAberta, setModalNovaPostagemAberta] = useState(false);
   const [projetos, setProjetos] = useState<Projeto[]>([]);
 
+  const fetchProjetos = async () => {
+    const res = await fetch("/api/projetos");
+    const data = await res.json();
+    setProjetos(data);
+  };
+
   useEffect(() => {
-    const fetchProjetos = async () => {
-      const res = await fetch("/api/projetos");
-      const data = await res.json();
-      setProjetos(data);
-    };
     fetchProjetos();
   }, []);
 
@@ -43,6 +44,11 @@ export default function DashboardPageContent() {
     if (projeto.pdfs?.length > 0) return { type: "pdf", url: projeto.pdfs[0] };
 
     return null;
+  };
+
+  const handleCloseModal = () => {
+    setModalNovaPostagemAberta(false);
+    fetchProjetos(); // Atualiza os projetos ao fechar o modal
   };
 
   return (
@@ -127,9 +133,7 @@ export default function DashboardPageContent() {
         </div>
       </div>
 
-      {modalNovaPostagemAberta && (
-        <NovaPostagemModal onClose={() => setModalNovaPostagemAberta(false)} />
-      )}
+      {modalNovaPostagemAberta && <NovaPostagemModal onClose={handleCloseModal} />}
     </>
   );
 }

@@ -89,12 +89,35 @@ export default async function handler(
         include: { profile: true },
       });
 
-      if (!user?.profile) {
-        return res.status(404).json({ error: "Perfil não encontrado" });
+      if (user && !user.profile) {
+        const novoPerfil = await prisma.userProfile.create({
+          data: {
+            fullName: user.name ?? null,
+            fotoUrl: user.image ?? null,
+            criadoViaGoogle: true,
+            user: {
+              connect: { id: user.id },
+            },
+          },
+        });
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            profile: {
+              connect: { id: novoPerfil.id },
+            },
+          },
+        });
       }
 
+      const userAtt = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: { profile: true },
+      });
+
       const perfilAtualizado = await prisma.userProfile.update({
-        where: { id: user.profile.id },
+        where: { id: userAtt.profile.id },
         data: {
           fullName: nome,
           telefone,
