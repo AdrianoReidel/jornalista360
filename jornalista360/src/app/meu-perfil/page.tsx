@@ -17,11 +17,17 @@ export default function MeuPerfilPage() {
   }, [status, router]);
 
   if (status === "loading") {
-    return <p>Carregando...</p>;
+    return <div
+        className="fixed inset-0 bg-cover bg-center z-0"
+        style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+      ></div>;
   }
 
   if (!session) {
-    return null; // Ou loading simples
+    return <div
+        className="fixed inset-0 bg-cover bg-center z-0"
+        style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+      ></div>; // Ou loading simples
   }
 
   return (
@@ -29,7 +35,7 @@ export default function MeuPerfilPage() {
       <>
         <div
           className="fixed inset-0 bg-cover bg-center z-0"
-          style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+          style={{ backgroundImage: "url('/background-jornal-pages-pages.jpg')" }}
         ></div>
         <MeuPerfilPageContent/>
       </>
