@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
-import { House, Pencil } from "lucide-react";
+import { House, Pencil, Trash2 } from "lucide-react";
 import NovaPostagemModal from "./NovaPostagemModal";
 import ModalCadastro from "./ModalCadastro";
 import Image from "next/image";
+import EditarPostagemModal from "./EditarPostagemModal";
+import api from "@/lib/api";
 
 interface UsuarioDados {
   nome: string;
@@ -22,7 +24,7 @@ interface UsuarioDados {
   fotoUrl?: string;
 }
 
-  interface Projeto {
+interface Projeto {
   id: string;
   titulo: string;
   descricao: string;
@@ -39,6 +41,7 @@ interface UsuarioDados {
 
 export default function MeuPerfilPageContent() {
   const [modalNovaPostagemAberta, setModalNovaPostagemAberta] = useState(false);
+  const [modalEditarPostagemAberta, setModalEditarPostagemAberta] = useState(false);
   const [modalEditarPerfilAberta, setModalEditarPerfilAberta] = useState(false);
   const [usuarioDados, setUsuarioDados] = useState<UsuarioDados>({
     nome: "",
@@ -54,6 +57,7 @@ export default function MeuPerfilPageContent() {
     tipoUsuario: "ALUNO",
   });
   const [projetos, setProjetos] = useState<Projeto[]>([]);
+  const [projetoEditar, setProjetoEditar] = useState<Projeto | null>(null);
 
   const getPreviewContent = (projeto: Projeto): { type: "image" | "youtube" | "pdf"; url: string } | null => {
     if (projeto.imagens?.length > 0) return { type: "image", url: projeto.imagens[0] };
@@ -98,6 +102,41 @@ export default function MeuPerfilPageContent() {
     fetchPerfil();
   };
 
+  const handleCloseModalEditar = () => {
+    setModalEditarPostagemAberta(false);
+    fetchPerfil();
+  };
+
+  const editarPostagem = (id: string) => {
+    setModalEditarPostagemAberta(true);
+    const projeto = projetos.find((p) => p.id === id);
+    setProjetoEditar(projeto || null);
+  };
+
+  const [modalExclusaoAberta, setModalExclusaoAberta] = useState(false);
+  const [projetoParaExcluir, setProjetoParaExcluir] = useState<string | null>(null);
+
+  const confirmarExclusao = async () => {
+    if (!projetoParaExcluir) return;
+
+    try {
+      await api.delete("/projetos", {
+        data: { id: projetoParaExcluir },
+      });
+      setModalExclusaoAberta(false);
+      setProjetoParaExcluir(null);
+      fetchPerfil();
+    } catch (error) {
+      console.error("Erro ao excluir:", error);
+    }
+  };
+
+  const abrirModalExclusao = (id: string) => {
+    setProjetoParaExcluir(id);
+    setModalExclusaoAberta(true);
+  };
+
+
   const handleUsuarioChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setUsuarioDados((prev) => ({ ...prev, [name]: value }));
@@ -107,13 +146,14 @@ export default function MeuPerfilPageContent() {
     <>
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="relative bg-white rounded-lg p-6 w-[90vw] h-[90vh] flex flex-col">
-          <h2 className="text-4xl font-bold mb-2 text-center" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h2 className="text-4xl font-bold mb-2 text-left" style={{ fontFamily: "'Playfair Display', serif" }}>
             Jornalista 360
             <div className="text-xl font-semibold mt-1">Meu Perfil</div>
           </h2>
           <div className="flex-grow overflow-auto grid grid-cols-4 gap-4 p-4">
             {/* Coluna Esquerda */}
-            <div className="col-span-1 border rounded p-4 bg-gray-50 flex flex-col items-start">
+            
+            <div className="col-span-1 border rounded p-4 bg-gray-50 overflow-y-auto max-h-[calc(100vh-200px)] items-start">
               <div className="w-full flex items-center justify-between mb-4">
                 {usuarioDados.fotoUrl && (
                   <Image
@@ -172,15 +212,17 @@ export default function MeuPerfilPageContent() {
               </div>
             </div>
 
-            {/* Coluna Direita - por enquanto em branco */}
-            <div className="col-span-3 border rounded p-4 bg-white">
+            {/* Coluna Direita*/}
+            <div className="col-span-3 border rounded p-4 bg-white overflow-y-auto max-h-[calc(100vh-200px)]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {projetos.map((projeto) => {
                   const preview = getPreviewContent(projeto);
 
                   return (
-                    <div key={projeto.id} className="border rounded shadow p-2 bg-white h-70 overflow-hidden flex flex-col relative">
-
+                    <div
+                      key={projeto.id}
+                      className="border rounded shadow p-2 bg-white h-70 overflow-hidden flex flex-col relative"
+                    >
                       {preview?.type === "image" && (
                         <Image
                           src={preview.url}
@@ -206,19 +248,45 @@ export default function MeuPerfilPageContent() {
                           title="Visualização do PDF"
                         />
                       )}
+
+                      {/* Informações do projeto */}
                       <div className="text-sm font-bold">{projeto.titulo}</div>
-                      <div className="text-xs text-gray-500 font-semibold mb-1">
-                        Criado em {new Date(projeto.dataCriacao).toLocaleDateString("pt-BR")}
+                      {/* Linha: Criado em + Ações */}
+                      <div className="flex justify-between items-center text-xs text-gray-500 font-semibold mb-1">
+                        <span>
+                          Criado em {new Date(projeto.dataCriacao).toLocaleDateString("pt-BR")}
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            title="Editar projeto"
+                            className="text-blue-600 hover:text-blue-800"
+                            onClick={() => editarPostagem(projeto.id)}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500 font-semibold">
-                        Contém {projeto.tipo}
+
+                      <div className="flex justify-between items-center text-xs text-gray-500 font-semibold mb-1">
+                        <span>
+                          Contém {projeto.tipo}
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            title="Excluir projeto"
+                            className="text-red-600 hover:text-red-800"
+                            onClick={() => abrirModalExclusao(projeto.id)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
-
             </div>
+
           </div>
           <div className="absolute top-6 right-6 flex gap-4">
             <button
@@ -249,6 +317,10 @@ export default function MeuPerfilPageContent() {
         <NovaPostagemModal  onClose={handleCloseModal} />
       )}
 
+      {modalEditarPostagemAberta && (
+        <EditarPostagemModal projeto={projetoEditar} onClose={handleCloseModalEditar} />
+      )}
+
       {modalEditarPerfilAberta && (
         <ModalCadastro
           usuarioDados={usuarioDados}
@@ -257,6 +329,30 @@ export default function MeuPerfilPageContent() {
           fecharModalCadastro={() => setModalEditarPerfilAberta(false)}
         />
       )}
+
+      {modalExclusaoAberta && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-[90%] max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Tem certeza que deseja excluir?</h2>
+            <p className="text-sm text-gray-700 mb-6">Esta ação não poderá ser desfeita.</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setModalExclusaoAberta(false)}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarExclusao}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Sim, excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
   );
 }

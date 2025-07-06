@@ -1,15 +1,31 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 
-interface NovaPostagemModalProps {
+interface Projeto {
+  id: string;
+  titulo: string;
+  descricao: string;
+  tipo: string;
+  dataCriacao: string;
+  imagens: string[];
+  pdfs: string[];
+  youtubeLinks: string[];
+  usuario: {
+    id: string;
+    name: string;
+  };
+}
+
+interface EditarPostagemModalProps {
+  projeto?: Projeto | null;
   onClose: () => void;
 }
 
-export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
+export default function EditarPostagemModal({ projeto, onClose }: EditarPostagemModalProps) {
   const router = useRouter();
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -18,6 +34,19 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
   const [pdfs, setPdfs] = useState<File[]>([]);
   const [youtubeLinks, setYoutubeLinks] = useState<string[]>([]);
   const [novoYoutube, setNovoYoutube] = useState("");
+
+  const [imagensExistentes, setImagensExistentes] = useState<string[]>([]);
+  const [pdfsExistentes, setPdfsExistentes] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (projeto) {
+      setTitulo(projeto.titulo || "");
+      setDescricao(projeto.descricao || "");
+      setYoutubeLinks(projeto.youtubeLinks || []);
+      setImagensExistentes(projeto.imagens || []);
+      setPdfsExistentes(projeto.pdfs || []);
+    }
+  }, [projeto]);
 
   const handleImagemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -39,11 +68,19 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
     }
   };
 
+  const removerArquivoExistente = (index: number, tipo: "imagem" | "pdf") => {
+    if (tipo === "imagem") {
+      setImagensExistentes(imagensExistentes.filter((_, i) => i !== index));
+    } else {
+      setPdfsExistentes(pdfsExistentes.filter((_, i) => i !== index));
+    }
+  };
+
   const removerLink = (index: number) => {
     setYoutubeLinks((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const adicionarLinkYoutube = () => { debugger
+  const adicionarLinkYoutube = () => {
     if (novoYoutube.trim()) {
       setYoutubeLinks((prev) => [...prev, novoYoutube.trim()]);
       setNovoYoutube("");
@@ -56,7 +93,6 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
     formData.append("upload_preset", "jornalista360_preset");
     formData.append("folder", "jornalista360");
 
-    // Detecta extensão do arquivo
     const isPdf = file.type === "application/pdf";
 
     const uploadUrl = isPdf
@@ -82,28 +118,30 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
     if (!titulo.trim()) return toast.warning("Por favor, preencha o título.");
     if (!descricao.trim()) return toast.warning("Por favor, preencha a descrição.");
 
-    const temImagem = imagens.length > 0;
-    const temPdf = pdfs.length > 0;
+    const temImagem = imagens.length > 0 || imagensExistentes.length > 0;
+    const temPdf = pdfs.length > 0 || pdfsExistentes.length > 0;
     const temYoutube = youtubeLinks.length > 0;
 
     if (!temImagem && !temPdf && !temYoutube) {
       return toast.warning("Adicione pelo menos uma imagem, PDF ou link do YouTube.");
     }
 
-    let urlsImagens: string[] = [];
-    let urlsPdfs: string[] = [];
+    const urlsImagens: string[] = [...imagensExistentes];
+    const urlsPdfs: string[] = [...pdfsExistentes];
 
     await toast.promise(
       (async () => {
         try {
-          if (temImagem) {
+          if (imagens.length > 0) {
             const uploadPromises = imagens.map(uploadFileToCloudinary);
-            urlsImagens = await Promise.all(uploadPromises);
+            const novas = await Promise.all(uploadPromises);
+            urlsImagens.push(...novas);
           }
 
-          if (temPdf) {
+          if (pdfs.length > 0) {
             const uploadPromises = pdfs.map(uploadFileToCloudinary);
-            urlsPdfs = await Promise.all(uploadPromises);
+            const novos = await Promise.all(uploadPromises);
+            urlsPdfs.push(...novos);
           }
 
           let tipo = "MULTIMIDIA";
@@ -114,7 +152,8 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
             else if (temYoutube) tipo = "VIDEO";
           }
 
-          await api.post("/projetos", {
+          await api.put("/projetos", {
+            id: projeto?.id,
             titulo,
             descricao,
             imagens: urlsImagens,
@@ -124,24 +163,23 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
           });
         } finally {
           onClose();
-          router.push("/dashboard");
+          router.refresh();
         }
       })(),
       {
-        loading: "Enviando postagem...",
-        success: "Postagem enviada com sucesso!",
-        error: "Erro ao enviar postagem. Tente novamente.",
+        loading: "Salvando alterações...",
+        success: "Projeto atualizado com sucesso!",
+        error: "Erro ao atualizar projeto.",
       }
     );
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
       <div className="bg-white p-6 rounded-lg w-[60vw] h-[80vh] flex flex-col overflow-hidden">
-        <h2 className="text-xl font-semibold mb-4">Nova Postagem</h2>
+        <h2 className="text-xl font-semibold mb-4">Editar Postagem</h2>
 
         <form onSubmit={handleSubmit} className="flex-grow overflow-auto space-y-4 pr-1">
-          {/* Título e descrição */}
           <div className="border rounded p-4">
             <label className="block mb-3">
               <span className="text-sm font-medium">Título</span>
@@ -167,45 +205,40 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
             <div className="mt-3 text-right">
               <button
                 type="submit"
-                onClick={handleSubmit}
                 className="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Enviar Postagem
+                Salvar Alterações
               </button>
             </div>
           </div>
 
-          {/* Grid com 3 colunas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Imagens */}
             <div className="border rounded p-4">
               <label className="block font-medium mb-2">📷 Fotografias</label>
-              
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                id="upload-imagens"
-                onChange={handleImagemChange}
-                className="hidden"
-              />
-              <label
-                htmlFor="upload-imagens"
-                className="cursor-pointer inline-block bg-gray-200 hover:bg-gray-300 text-sm text-gray-700 font-medium py-2 px-4 rounded"
-              >
+              <input type="file" accept="image/*" multiple id="upload-imagens" onChange={handleImagemChange} className="hidden" />
+              <label htmlFor="upload-imagens" className="cursor-pointer inline-block bg-gray-200 hover:bg-gray-300 text-sm text-gray-700 font-medium py-2 px-4 rounded">
                 Selecionar imagens
               </label>
-
+              {imagensExistentes.length > 0 && (
+                <ul className="mt-3 text-sm list-disc list-inside space-y-1">
+                  {imagensExistentes.map((url, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2">
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 underline">
+                        Imagem {i + 1}
+                      </a>
+                      <button type="button" onClick={() => removerArquivoExistente(i, "imagem")} className="text-red-500 hover:underline text-xs">
+                        Remover
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {imagens.length > 0 && (
                 <ul className="mt-3 text-sm list-disc list-inside space-y-1">
                   {imagens.map((img, i) => (
                     <li key={i} className="flex items-center justify-between gap-2">
                       <span className="truncate">{img.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => removerArquivo(i, "imagem")}
-                        className="text-red-500 hover:underline text-xs"
-                      >
+                      <button type="button" onClick={() => removerArquivo(i, "imagem")} className="text-red-500 hover:underline text-xs">
                         Remover
                       </button>
                     </li>
@@ -214,35 +247,32 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
               )}
             </div>
 
-            {/* PDFs */}
             <div className="border rounded p-4">
-              <label className="block font-medium mb-2">📄 Notícias, reportagens, artigos, entrevistas, ... </label>
-              
-              <input
-                type="file"
-                accept="application/pdf"
-                multiple
-                id="upload-pdfs"
-                onChange={handlePdfChange}
-                className="hidden"
-              />
-              <label
-                htmlFor="upload-pdfs"
-                className="cursor-pointer inline-block bg-gray-200 hover:bg-gray-300 text-sm text-gray-700 font-medium py-2 px-4 rounded"
-              >
+              <label className="block font-medium mb-2">📄 PDFs</label>
+              <input type="file" accept="application/pdf" multiple id="upload-pdfs" onChange={handlePdfChange} className="hidden" />
+              <label htmlFor="upload-pdfs" className="cursor-pointer inline-block bg-gray-200 hover:bg-gray-300 text-sm text-gray-700 font-medium py-2 px-4 rounded">
                 Selecionar PDFs
               </label>
-
+              {pdfsExistentes.length > 0 && (
+                <ul className="mt-3 text-sm list-disc list-inside space-y-1">
+                  {pdfsExistentes.map((url, i) => (
+                    <li key={i} className="flex items-center justify-between gap-2">
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 underline">
+                        PDF {i + 1}
+                      </a>
+                      <button type="button" onClick={() => removerArquivoExistente(i, "pdf")} className="text-red-500 hover:underline text-xs">
+                        Remover
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {pdfs.length > 0 && (
                 <ul className="mt-3 text-sm list-disc list-inside space-y-1">
                   {pdfs.map((pdf, i) => (
                     <li key={i} className="flex items-center justify-between gap-2">
                       <span className="truncate">{pdf.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => removerArquivo(i, "pdf")}
-                        className="text-red-500 hover:underline text-xs"
-                      >
+                      <button type="button" onClick={() => removerArquivo(i, "pdf")} className="text-red-500 hover:underline text-xs">
                         Remover
                       </button>
                     </li>
@@ -251,8 +281,6 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
               )}
             </div>
 
-
-            {/* Vídeos YouTube */}
            <div className="border rounded p-4">
             <div className="flex items-center justify-between mb-2">
               <label className="block font-medium">🎥 Links do YouTube</label>
@@ -292,10 +320,10 @@ export default function NovaPostagemModal({ onClose }: NovaPostagemModalProps) {
               </ul>
             )}
             </div>
+
           </div>
         </form>
 
-        {/* Ações */}
         <div className="flex justify-end mt-4 gap-2">
           <button
             type="button"

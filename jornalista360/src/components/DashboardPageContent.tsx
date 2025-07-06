@@ -56,10 +56,11 @@ export default function DashboardPageContent() {
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="relative bg-white rounded-lg p-6 w-[90vw] h-[90vh] flex flex-col">
           <h2
-            className="text-4xl font-bold mb-4 text-center"
+            className="text-4xl font-bold mb-4 text-left"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             Jornalista 360
+            <div className="text-xl font-semibold mt-1">Feed de projetos</div>
           </h2>
           <div className="flex-grow overflow-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {projetos.map((projeto) => {

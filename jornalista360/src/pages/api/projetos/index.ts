@@ -107,6 +107,76 @@ export default async function handler(
     }
   }
 
+  // --- ATUALIZAÇÃO DE PROJETO (PUT) ---
+  if (req.method === "PUT") {
+    const session = await getServerSession(req, res, authOptions);
+
+    if (!session?.user?.email) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+
+    try {
+      const {
+        id,
+        titulo,
+        descricao,
+        tipo,
+        imagens = [],
+        pdfs = [],
+        youtubeLinks = [],
+      } = req.body;
+
+      if (!id || !titulo || !tipo) {
+        return res.status(400).json({ error: "ID, título e tipo são obrigatórios" });
+      }
+
+      // Verifica se o projeto existe
+      const projetoExistente = await prisma.projeto.findUnique({
+        where: { id },
+      });
+
+      if (!projetoExistente) {
+        return res.status(404).json({ error: "Projeto não encontrado" });
+      }
+
+      // Remove arquivos antigos vinculados a este projeto
+      await prisma.arquivo.deleteMany({
+        where: { projetoId: id },
+      });
+
+      // Atualiza o projeto e recria os arquivos
+      const projetoAtualizado = await prisma.projeto.update({
+        where: { id },
+        data: {
+          titulo,
+          descricao,
+          tipo,
+          arquivos: {
+            create: [
+              ...imagens.map((url: string) => ({ url, tipo: "FOTO" })),
+              ...pdfs.map((url: string) => ({ url, tipo: "PDF" })),
+              ...youtubeLinks.map((url: string) => ({ url, tipo: "VIDEO" })),
+            ],
+          },
+        },
+        include: {
+          arquivos: true,
+          usuario: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+
+      return res.status(200).json(projetoAtualizado);
+    } catch (error) {
+      console.error("Erro ao atualizar projeto:", error);
+      return res.status(500).json({ error: "Erro ao atualizar projeto" });
+    }
+  }
+
+
   // --- LISTAGEM DE PROJETOS (GET) ---
   if (req.method === "GET") {
     try {
@@ -146,6 +216,46 @@ export default async function handler(
     } catch (error) {
       console.error("Erro ao buscar projetos:", error);
       return res.status(500).json({ error: "Erro ao buscar projetos" });
+    }
+  }
+
+  // --- DELETAR PROJETO (DELETE) ---
+  if (req.method === "DELETE") {
+    const session = await getServerSession(req, res, authOptions);
+
+    if (!session?.user?.email) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
+    }
+
+    try {
+      const { id } = req.body;
+
+      if (!id) {
+        return res.status(400).json({ error: "ID do projeto é obrigatório" });
+      }
+
+      const projetoExistente = await prisma.projeto.findUnique({
+        where: { id },
+      });
+
+      if (!projetoExistente) {
+        return res.status(404).json({ error: "Projeto não encontrado" });
+      }
+
+      // Deletar todos os arquivos associados ao projeto
+      await prisma.arquivo.deleteMany({
+        where: { projetoId: id },
+      });
+
+      // Deletar o projeto
+      await prisma.projeto.delete({
+        where: { id },
+      });
+
+      return res.status(200).json({ message: "Projeto deletado com sucesso" });
+    } catch (error) {
+      console.error("Erro ao deletar projeto:", error);
+      return res.status(500).json({ error: "Erro ao deletar projeto" });
     }
   }
 
