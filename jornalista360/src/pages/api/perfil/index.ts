@@ -4,6 +4,18 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
+
+type ProjetoComIncludes = Prisma.ProjetoGetPayload<{
+  include: {
+    arquivos: true;
+    usuario: {
+      include: {
+        user: true;
+      };
+    };
+  };
+}>;
 
 export default async function handler(
   req: NextApiRequest,
@@ -57,10 +69,30 @@ export default async function handler(
         },
       });
 
-      // Retornar objeto combinado com email e dados do perfil
+      // Buscando projetos do usuário
+      const projetos = await prisma.projeto.findMany({
+        where: { usuarioId: userReturn?.profile?.id },
+        orderBy: { dataCriacao: "desc" },
+        include: {
+          arquivos: true,
+        },
+      });
+
+      const projetosFormatados = projetos.map((projeto: ProjetoComIncludes) => ({
+        id: projeto.id,
+        titulo: projeto.titulo,
+        descricao: projeto.descricao,
+        tipo: projeto.tipo,
+        dataCriacao: projeto.dataCriacao,
+        imagens: projeto.arquivos.filter((a) => a.tipo === "FOTO").map((a) => a.url),
+        pdfs: projeto.arquivos.filter((a) => a.tipo === "PDF").map((a) => a.url),
+        youtubeLinks: projeto.arquivos.filter((a) => a.tipo === "VIDEO").map((a) => a.url),
+      }));
+
       return res.status(200).json({
         email: userReturn.email,
         ...userReturn.profile,
+        projetos: projetosFormatados,
       });
     } catch (error) {
       console.error("Erro ao buscar perfil:", error);

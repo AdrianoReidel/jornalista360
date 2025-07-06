@@ -22,6 +22,21 @@ interface UsuarioDados {
   fotoUrl?: string;
 }
 
+  interface Projeto {
+  id: string;
+  titulo: string;
+  descricao: string;
+  tipo: string;
+  dataCriacao: string;
+  imagens: string[];
+  pdfs: string[];
+  youtubeLinks: string[];
+  usuario: {
+    id: string;
+    name: string;
+  };
+}
+
 export default function MeuPerfilPageContent() {
   const [modalNovaPostagemAberta, setModalNovaPostagemAberta] = useState(false);
   const [modalEditarPerfilAberta, setModalEditarPerfilAberta] = useState(false);
@@ -38,29 +53,50 @@ export default function MeuPerfilPageContent() {
     biografia: "",
     tipoUsuario: "ALUNO",
   });
+  const [projetos, setProjetos] = useState<Projeto[]>([]);
 
-  useEffect(() => {
-    async function fetchPerfil() {
-      const res = await fetch("/api/perfil");
-      const data = await res.json();
-      if (data) {
-        setUsuarioDados((prev) => ({
-          ...prev,
-          nome: data.fullName || "",
-          email: data.email || "",
-          telefone: data.telefone || "",
-          cpf: data.cpf || "",
-          idade: data.idade?.toString() || "",
-          linkedin: data.linkedin || "",
-          curriculoLattes: data.curriculoLattes || "",
-          biografia: data.biografia || "",
-          tipoUsuario: data.tipoUsuario || "ALUNO",
-          fotoUrl: data.fotoUrl || "",
-        }));
+  const getPreviewContent = (projeto: Projeto): { type: "image" | "youtube" | "pdf"; url: string } | null => {
+    if (projeto.imagens?.length > 0) return { type: "image", url: projeto.imagens[0] };
+    if (projeto.youtubeLinks?.length > 0) {
+      const videoId = projeto.youtubeLinks[0].split("v=")[1]?.split("&")[0] ?? projeto.youtubeLinks[0];
+      return { type: "youtube", url: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` };
+    }
+    if (projeto.pdfs?.length > 0) return { type: "pdf", url: projeto.pdfs[0] };
+    return null;
+  };
+
+  const fetchPerfil = async () => {
+    const res = await fetch("/api/perfil");
+    const data = await res.json();
+    if (data) {
+      setUsuarioDados((prev) => ({
+        ...prev,
+        nome: data.fullName || "",
+        email: data.email || "",
+        telefone: data.telefone || "",
+        cpf: data.cpf || "",
+        idade: data.idade?.toString() || "",
+        linkedin: data.linkedin || "",
+        curriculoLattes: data.curriculoLattes || "",
+        biografia: data.biografia || "",
+        tipoUsuario: data.tipoUsuario || "ALUNO",
+        fotoUrl: data.fotoUrl || "",
+      }));
+
+      if (data.projetos) {
+        setProjetos(data.projetos);
       }
     }
+  };
+
+  useEffect(() => {
     fetchPerfil();
   }, []);
+
+  const handleCloseModal = () => {
+    setModalNovaPostagemAberta(false);
+    fetchPerfil();
+  };
 
   const handleUsuarioChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -138,7 +174,50 @@ export default function MeuPerfilPageContent() {
 
             {/* Coluna Direita - por enquanto em branco */}
             <div className="col-span-3 border rounded p-4 bg-white">
-              {/* Conteúdo futuro pode ir aqui */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {projetos.map((projeto) => {
+                  const preview = getPreviewContent(projeto);
+
+                  return (
+                    <div key={projeto.id} className="border rounded shadow p-2 bg-white h-70 overflow-hidden flex flex-col relative">
+
+                      {preview?.type === "image" && (
+                        <Image
+                          src={preview.url}
+                          alt="Imagem do projeto"
+                          width={400}
+                          height={400}
+                          className="w-full h-48 object-cover rounded mb-2"
+                        />
+                      )}
+                      {preview?.type === "youtube" && (
+                        <Image
+                          src={preview.url}
+                          alt="Thumbnail do vídeo"
+                          width={400}
+                          height={400}
+                          className="w-full h-48 object-cover rounded mb-2"
+                        />
+                      )}
+                      {preview?.type === "pdf" && (
+                        <iframe
+                          src={preview.url}
+                          className="w-full h-48 rounded mb-2 border"
+                          title="Visualização do PDF"
+                        />
+                      )}
+                      <div className="text-sm font-bold">{projeto.titulo}</div>
+                      <div className="text-xs text-gray-500 font-semibold mb-1">
+                        Criado em {new Date(projeto.dataCriacao).toLocaleDateString("pt-BR")}
+                      </div>
+                      <div className="text-xs text-gray-500 font-semibold">
+                        Contém {projeto.tipo}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
             </div>
           </div>
           <div className="absolute top-6 right-6 flex gap-4">
@@ -167,7 +246,7 @@ export default function MeuPerfilPageContent() {
       </div>
 
       {modalNovaPostagemAberta && (
-        <NovaPostagemModal onClose={() => setModalNovaPostagemAberta(false)} />
+        <NovaPostagemModal  onClose={handleCloseModal} />
       )}
 
       {modalEditarPerfilAberta && (
