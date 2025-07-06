@@ -108,7 +108,6 @@ export default async function handler(
       const {
         nome,
         telefone,
-        cpf,
         idade,
         linkedin,
         curriculoLattes,
@@ -148,12 +147,12 @@ export default async function handler(
         include: { profile: true },
       });
 
+      // Agora pode atualizar com segurança
       const perfilAtualizado = await prisma.userProfile.update({
         where: { id: userAtt.profile.id },
         data: {
           fullName: nome,
           telefone,
-          cpf,
           idade: idade ? Number(idade) : null,
           linkedin,
           curriculoLattes,

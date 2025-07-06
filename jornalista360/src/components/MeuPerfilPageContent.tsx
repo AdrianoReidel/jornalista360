@@ -14,7 +14,6 @@ interface UsuarioDados {
   senha: string;
   email: string;
   telefone: string;
-  cpf: string;
   idade: string;
   linkedin: string;
   curriculoLattes: string;
@@ -48,7 +47,6 @@ export default function MeuPerfilPageContent() {
     senha: "",
     email: "",
     telefone: "",
-    cpf: "",
     idade: "",
     linkedin: "",
     curriculoLattes: "",
@@ -78,7 +76,6 @@ export default function MeuPerfilPageContent() {
         nome: data.fullName || "",
         email: data.email || "",
         telefone: data.telefone || "",
-        cpf: data.cpf || "",
         idade: data.idade?.toString() || "",
         linkedin: data.linkedin || "",
         curriculoLattes: data.curriculoLattes || "",

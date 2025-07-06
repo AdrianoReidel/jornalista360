@@ -9,7 +9,6 @@ interface UsuarioDados {
   senha: string;
   email: string;
   telefone: string;
-  cpf: string;
   fotoFile: File | null;
   idade: string;
   linkedin: string;
@@ -41,7 +40,6 @@ export default function ModalCadastro({
       body: JSON.stringify({
         nome: usuarioDados.nome,
         telefone: usuarioDados.telefone,
-        cpf: usuarioDados.cpf,
         idade: usuarioDados.idade,
         linkedin: usuarioDados.linkedin,
         curriculoLattes: usuarioDados.curriculoLattes,
@@ -102,7 +100,7 @@ export default function ModalCadastro({
             </label>
           </div>
 
-          {/* Telefone, CPF, Idade na mesma linha */}
+          {/* Telefone, Idade na mesma linha */}
           <div className="grid grid-cols-3 gap-4 mb-3">
             <label>
               <span className="text-sm font-medium">Telefone</span>
@@ -111,16 +109,6 @@ export default function ModalCadastro({
                 name="telefone"
                 className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
                 value={usuarioDados.telefone}
-                onChange={handleUsuarioChange}
-              />
-            </label>
-            <label>
-              <span className="text-sm font-medium">CPF</span>
-              <input
-                type="text"
-                name="cpf"
-                className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-                value={usuarioDados.cpf}
                 onChange={handleUsuarioChange}
               />
             </label>
