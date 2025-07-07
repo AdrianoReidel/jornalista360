@@ -3,6 +3,7 @@ import { signOut } from "next-auth/react";
 import { User } from "lucide-react";
 import NovaPostagemModal from "./NovaPostagemModal";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface Projeto {
   id: string;
@@ -20,6 +21,7 @@ interface Projeto {
 }
 
 export default function DashboardPageContent() {
+  const router = useRouter();
   const [modalNovaPostagemAberta, setModalNovaPostagemAberta] = useState(false);
   const [projetos, setProjetos] = useState<Projeto[]>([]);
 
@@ -67,7 +69,11 @@ export default function DashboardPageContent() {
               const preview = getPreviewContent(projeto);
 
               return (
-                <div key={projeto.id} className="border rounded shadow p-2 bg-white h-70 overflow-hidden flex flex-col">
+                <div
+                  key={projeto.id}
+                  onClick={() => router.push(`/projeto/${projeto.id}`)}
+                  className="border rounded shadow p-2 bg-white h-70 overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition"
+                >
                   {preview?.type === "image" && (
                   <Image
                     src={preview.url}

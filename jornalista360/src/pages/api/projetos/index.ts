@@ -176,7 +176,6 @@ export default async function handler(
     }
   }
 
-
   // --- LISTAGEM DE PROJETOS (GET) ---
   if (req.method === "GET") {
     try {
