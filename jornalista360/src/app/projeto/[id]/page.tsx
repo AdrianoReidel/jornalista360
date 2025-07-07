@@ -12,7 +12,7 @@ type PageProps = {
 
 export async function generateMetadata({ params }: { params: Promise<PageProps['params']> }): Promise<Metadata> {
   const { id } = await params;
-  
+
   const projetoId = parseInt(id, 10);
 
   const projeto = await prisma.projeto.findUnique({
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<PageProps['
   const imagemFoto = arquivos.find((arq: { tipo: TipoArquivo }) => arq.tipo === "FOTO");
   const imagemVideo = arquivos.find((arq: { tipo: TipoArquivo }) => arq.tipo === "VIDEO");
 
-  let imagemPreview: string = "/logo-share-default.jpg";
+  let imagemPreview: string = "/logo-share-default.png";
 
   if (imagemFoto) {
     imagemPreview = imagemFoto.url;
