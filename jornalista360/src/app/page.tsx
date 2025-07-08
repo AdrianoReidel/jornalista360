@@ -22,7 +22,7 @@ export default function Home() {
   if (status === "loading") {
     return <div
         className="fixed inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+        style={{ backgroundImage: "url('/background-jornal-pages.png')" }}
       ></div>;
   }
 
@@ -30,7 +30,7 @@ export default function Home() {
   if (status === "authenticated") {
     return <div
         className="fixed inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+        style={{ backgroundImage: "url('/background-jornal-pages.png')" }}
       ></div>; // ou uma tela loading simples
   }
 
@@ -38,7 +38,7 @@ export default function Home() {
     <>
       <div
         className="fixed inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+        style={{ backgroundImage: "url('/background-jornal-pages.png')" }}
       ></div>
 
       {showLoginModal && (

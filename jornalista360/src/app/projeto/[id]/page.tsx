@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<PageProps['
   const imagemFoto = arquivos.find((arq: { tipo: TipoArquivo }) => arq.tipo === "FOTO");
   const imagemVideo = arquivos.find((arq: { tipo: TipoArquivo }) => arq.tipo === "VIDEO");
 
-  let imagemPreview: string = "/logo-share-default.png";
+  let imagemPreview: string = "/logo-share-default.jpg";
 
   if (imagemFoto) {
     imagemPreview = imagemFoto.url;
@@ -78,7 +78,7 @@ export default async function ProjetoPage({ params }: { params: Promise<PageProp
     <div className="p-6 relative z-10">
       <div
         className="fixed inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+        style={{ backgroundImage: "url('/background-jornal-pages.png')" }}
       ></div>
       <ProjetoPageContent projetoId={id} />
     </div>

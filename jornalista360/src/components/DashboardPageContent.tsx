@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
-import { User } from "lucide-react";
+import { Search, User } from "lucide-react";
 import NovaPostagemModal from "./NovaPostagemModal";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -23,10 +23,24 @@ interface Projeto {
 export default function DashboardPageContent() {
   const router = useRouter();
   const [modalNovaPostagemAberta, setModalNovaPostagemAberta] = useState(false);
+  const [search, setSearch] = useState("");
+  const [type, setType] = useState("");
   const [projetos, setProjetos] = useState<Projeto[]>([]);
 
   const fetchProjetos = async () => {
-    const res = await fetch("/api/projetos");
+    const queryParams = [];
+
+    if (search.trim()) {
+      queryParams.push(`search=${encodeURIComponent(search.trim())}`);
+    }
+
+    if (type.trim()) {
+      queryParams.push(`type=${encodeURIComponent(type.trim())}`);
+    }
+
+    const queryString = queryParams.length ? `?${queryParams.join("&")}` : "";
+
+    const res = await fetch(`/api/projetos${queryString}`);
     const data = await res.json();
     setProjetos(data);
   };
@@ -34,6 +48,10 @@ export default function DashboardPageContent() {
   useEffect(() => {
     fetchProjetos();
   }, []);
+
+  useEffect(() => {
+    fetchProjetos();
+  }, [type]);
 
   const getPreviewContent = (projeto: Projeto): { type: "image" | "youtube" | "pdf"; url: string } | null => {
     if (projeto.imagens?.length > 0) return { type: "image", url: projeto.imagens[0] };
@@ -57,13 +75,51 @@ export default function DashboardPageContent() {
     <>
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="relative bg-white rounded-lg p-6 w-[90vw] h-[90vh] flex flex-col">
-          <h2
-            className="text-4xl font-bold mb-4 text-left"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            Jornalista 360
-            <div className="text-xl font-semibold mt-1">Feed de projetos</div>
-          </h2>
+          <div className="flex flex-col flex-row mb-4">
+            <div>
+              <h2
+                className="text-4xl font-bold text-left"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                Jornalista 360
+              </h2>
+              <div className="text-xl font-semibold mt-1">Feed de projetos</div>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Pesquisar projetos ou pessoas..."
+              className="mt-4 ml-10 px-4 py-2 border rounded md:w-115"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  fetchProjetos();
+                }
+              }}
+            />
+            <button
+              onClick={fetchProjetos}
+              className="px-3 mt-4 ml-2 text-gray-600 border rounded cursor-pointer hover:shadow-md transition text-black"
+              title="Buscar"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+             {/* ComboBox de tipo */}
+            <select
+              className="mt-4 ml-4 px-4 py-2 border rounded"
+              value={type}
+              onChange={(e) => {
+                setType(e.target.value);
+              }}
+            >
+              <option value="">Todos os tipos</option>
+              <option value="MULTIMIDIA">Multimídia</option>
+              <option value="TEXTO">Texto</option>
+              <option value="VIDEO">Vídeo</option>
+              <option value="FOTOS">Fotos</option>
+            </select>
+          </div>
           <div className="flex-grow overflow-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {projetos.map((projeto) => {
               const preview = getPreviewContent(projeto);

@@ -32,7 +32,9 @@ export default async function handler(
       const { titulo, descricao, tipo, imagens, pdfs, youtubeLinks } = req.body;
 
       if (!titulo || !tipo) {
-        return res.status(400).json({ error: "Título e tipo são obrigatórios" });
+        return res
+          .status(400)
+          .json({ error: "Título e tipo são obrigatórios" });
       }
 
       const user = await prisma.user.findUnique({
@@ -68,7 +70,9 @@ export default async function handler(
       });
 
       if (!userAtt || !userAtt.profile) {
-        return res.status(404).json({ error: "Usuário ou perfil não encontrado" });
+        return res
+          .status(404)
+          .json({ error: "Usuário ou perfil não encontrado" });
       }
 
       const projetoCriado = await prisma.projeto.create({
@@ -127,7 +131,9 @@ export default async function handler(
       } = req.body;
 
       if (!id || !titulo || !tipo) {
-        return res.status(400).json({ error: "ID, título e tipo são obrigatórios" });
+        return res
+          .status(400)
+          .json({ error: "ID, título e tipo são obrigatórios" });
       }
 
       // Verifica se o projeto existe
@@ -179,7 +185,10 @@ export default async function handler(
   // --- LISTAGEM DE PROJETOS (GET) ---
   if (req.method === "GET") {
     try {
-      const projetos = await prisma.projeto.findMany({
+      const search = req.query?.search?.toString().trim().toLowerCase() ?? "";
+      const type = req.query?.type?.toString().trim().toUpperCase(); // espera algo como 'VIDEO'
+
+      const projetos: ProjetoComIncludes[] = await prisma.projeto.findMany({
         orderBy: { dataCriacao: "desc" },
         include: {
           arquivos: true,
@@ -196,20 +205,43 @@ export default async function handler(
         },
       });
 
-      const projetosFormatados = projetos.map((projeto: ProjetoComIncludes) => ({
-        id: projeto.id,
-        titulo: projeto.titulo,
-        descricao: projeto.descricao,
-        tipo: projeto.tipo,
-        dataCriacao: projeto.dataCriacao,
-        imagens: projeto.arquivos.filter((a) => a.tipo === "FOTO").map((a) => a.url),
-        pdfs: projeto.arquivos.filter((a) => a.tipo === "PDF").map((a) => a.url),
-        youtubeLinks: projeto.arquivos.filter((a) => a.tipo === "VIDEO").map((a) => a.url),
-        usuario: {
-          id: projeto.usuario?.user?.id ?? "sem-id",
-          name: projeto.usuario?.user?.name ?? "Usuário desconhecido",
-        },
-      }));
+      // Filtra por search (título ou nome do usuário)
+      let projetosFiltrados = search
+        ? projetos.filter((projeto) => {
+            const titulo = projeto.titulo?.toLowerCase() ?? "";
+            const nomeUsuario =
+              projeto.usuario?.user?.name?.toLowerCase() ?? "";
+            return titulo.includes(search) || nomeUsuario.includes(search);
+          })
+        : projetos;
+
+      // Filtra por tipo, se o filtro for válido
+      const tiposValidos = ["MULTIMIDIA", "TEXTO", "VIDEO", "FOTOS"];
+      if (type && tiposValidos.includes(type)) {
+        projetosFiltrados = projetosFiltrados.filter(
+          (projeto) => projeto.tipo === type
+        );
+      }
+
+      const projetosFormatados = projetosFiltrados.map((projeto) => {
+        const arquivos = projeto.arquivos ?? [];
+        return {
+          id: projeto.id,
+          titulo: projeto.titulo,
+          descricao: projeto.descricao,
+          tipo: projeto.tipo,
+          dataCriacao: projeto.dataCriacao,
+          imagens: arquivos.filter((a) => a.tipo === "FOTO").map((a) => a.url),
+          pdfs: arquivos.filter((a) => a.tipo === "PDF").map((a) => a.url),
+          youtubeLinks: arquivos
+            .filter((a) => a.tipo === "VIDEO")
+            .map((a) => a.url),
+          usuario: {
+            id: projeto.usuario?.user?.id ?? "sem-id",
+            name: projeto.usuario?.user?.name ?? "Usuário desconhecido",
+          },
+        };
+      });
 
       return res.status(200).json(projetosFormatados);
     } catch (error) {

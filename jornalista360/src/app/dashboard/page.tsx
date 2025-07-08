@@ -19,14 +19,14 @@ export default function DashboardPage() {
   if (status === "loading") {
     return <div
         className="fixed inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+        style={{ backgroundImage: "url('/background-jornal-pages.png')" }}
       ></div>;
   }
 
   if (!session) {
     return <div
         className="fixed inset-0 bg-cover bg-center z-0"
-        style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+        style={{ backgroundImage: "url('/background-jornal-pages.png')" }}
       ></div>; // Ou loading simples
   }
 
@@ -35,7 +35,7 @@ export default function DashboardPage() {
       <>
         <div
           className="fixed inset-0 bg-cover bg-center z-0"
-          style={{ backgroundImage: "url('/background-jornal-pages.jpg')" }}
+          style={{ backgroundImage: "url('/background-jornal-pages.png')" }}
         ></div>
         <DashboardPageContent/>
       </>
