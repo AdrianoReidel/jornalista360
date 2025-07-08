@@ -76,16 +76,16 @@ export default function DashboardPageContent() {
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="relative bg-white rounded-lg p-6 w-[90vw] h-[90vh] flex flex-col">
           <div className="flex flex-col flex-row mb-4">
-            <div>
-              <h2
-                className="text-4xl font-bold text-left"
-                style={{ fontFamily: "'Playfair Display', serif" }}
-              >
-                Jornalista 360
-              </h2>
+            <div> 
+              <Image
+                src="/logo.png"
+                alt="Logo Jornalista 360"
+                width={230}
+                height={80}
+                className="mb-2"
+              />
               <div className="text-xl font-semibold mt-1">Feed de projetos</div>
             </div>
-
             <input
               type="text"
               placeholder="Pesquisar projetos ou pessoas..."

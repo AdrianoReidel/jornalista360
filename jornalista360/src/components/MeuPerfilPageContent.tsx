@@ -143,10 +143,16 @@ export default function MeuPerfilPageContent() {
     <>
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="relative bg-white rounded-lg p-6 w-[90vw] h-[90vh] flex flex-col">
-          <h2 className="text-4xl font-bold mb-2 text-left" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Jornalista 360
+          <div> 
+            <Image
+              src="/logo.png"
+              alt="Logo Jornalista 360"
+              width={230}
+              height={80}
+              className="mb-2"
+            />
             <div className="text-xl font-semibold mt-1">Meu Perfil</div>
-          </h2>
+          </div>
           <div className="flex-grow overflow-auto grid grid-cols-4 gap-4 p-4">
             {/* Coluna Esquerda */}
             

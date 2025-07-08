@@ -28,7 +28,7 @@ model UserProfile {
   linkedin        String?
   curriculoLattes String?
   fotoUrl         String?
-  biografia       String?
+  biografia       String?      @db.Text
   tipoUsuario     TipoUsuario?
   criadoViaGoogle Boolean      @default(false)
   projetos        Projeto[]    @relation("UsuarioProjetos")
